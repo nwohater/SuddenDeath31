@@ -31,10 +31,10 @@ class ResolveRoundUseCase {
     if (wasInstantWin) {
       winnerId = instantWinnerId;
     } else {
-      // Find player with lowest hand value
-      winnerId = _findLowestHandWinner(state.players);
+      // Find player with highest hand value (closest to 31)
+      winnerId = _findHighestHandWinner(state.players);
     }
-    
+
     // Award pot to winner
     final updatedPlayers = state.players.map((player) {
       if (player.id == winnerId) {
@@ -42,7 +42,7 @@ class ResolveRoundUseCase {
       }
       return player;
     }).toList();
-    
+
     return RoundResolution(
       winnerId: winnerId,
       winAmount: state.pot,
@@ -51,24 +51,24 @@ class ResolveRoundUseCase {
       wasSuddenDeath: state.isSuddenDeathMode,
     );
   }
-  
-  String _findLowestHandWinner(List<Player> players) {
-    Player? lowestPlayer;
-    int lowestValue = 999;
-    
+
+  String _findHighestHandWinner(List<Player> players) {
+    Player? highestPlayer;
+    int highestValue = -1;
+
     for (final player in players) {
       final handValue = player.hand.value;
-      if (handValue < lowestValue) {
-        lowestValue = handValue;
-        lowestPlayer = player;
+      if (handValue > highestValue) {
+        highestValue = handValue;
+        highestPlayer = player;
       }
     }
-    
-    if (lowestPlayer == null) {
+
+    if (highestPlayer == null) {
       throw Exception('No winner found');
     }
-    
-    return lowestPlayer.id;
+
+    return highestPlayer.id;
   }
 }
 
