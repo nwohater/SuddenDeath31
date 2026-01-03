@@ -153,14 +153,14 @@ class SuddenDeathGradients {
     ],
   );
 
-  /// Card back gradient - lighter for visibility
+  /// Card back gradient - much lighter for visibility against dark background
   static const LinearGradient cardBack = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
+      Color(0xFF3A3A3D), // Lighter gray
+      Color(0xFF2A2A2D), // Medium gray
       SuddenDeathColors.slate,
-      SuddenDeathColors.charcoal,
-      SuddenDeathColors.bloodstone,
     ],
   );
 

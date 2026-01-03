@@ -21,6 +21,7 @@ class GameTableScreen extends StatefulWidget {
 class _GameTableScreenState extends State<GameTableScreen> {
   final NPCDecisionEngine _npcEngine = NPCDecisionEngine();
   game.Card? _selectedCard;
+  game.Card? _drawnCard; // Card drawn from deck (shown as 4th card)
   bool _isProcessingTurn = false;
 
   @override
@@ -191,6 +192,10 @@ class _GameTableScreenState extends State<GameTableScreen> {
   }
 
   Widget _buildTopBar(round) {
+    final gameProvider = context.read<GameProvider>();
+    final currentRoundNum = gameProvider.currentGame!.roundNumber + 1;
+    final totalRounds = gameProvider.currentGame!.totalRounds;
+
     return Padding(
       padding: const EdgeInsets.all(SuddenDeathSizes.spacingLg),
       child: Row(
@@ -214,6 +219,25 @@ class _GameTableScreenState extends State<GameTableScreen> {
                 ),
                 Text(
                   '${round.turnsRemaining}',
+                  style: SuddenDeathTextStyles.score.copyWith(fontSize: 24),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: SuddenDeathSizes.spacingLg,
+              vertical: SuddenDeathSizes.spacingMd,
+            ),
+            decoration: SuddenDeathDecorations.glassPanel,
+            child: Column(
+              children: [
+                Text(
+                  'ROUND',
+                  style: SuddenDeathTextStyles.caption,
+                ),
+                Text(
+                  '$currentRoundNum/$totalRounds',
                   style: SuddenDeathTextStyles.score.copyWith(fontSize: 24),
                 ),
               ],
@@ -252,15 +276,22 @@ class _GameTableScreenState extends State<GameTableScreen> {
   }
 
   Widget _buildHumanPlayerArea(Player player, bool isActive) {
+    // Build list of all cards (hand + drawn card if any)
+    final allCards = [...player.hand.cards];
+    if (_drawnCard != null) {
+      allCards.add(_drawnCard!);
+    }
+
     return Column(
       children: [
         PlayerPanelWidget(player: player, isActive: isActive),
         const SizedBox(height: SuddenDeathSizes.spacingMd),
-        // Player's cards
+        // Player's cards (including drawn card if any)
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: player.hand.cards.map((card) {
+          children: allCards.map((card) {
             final isSelected = _selectedCard == card;
+            final isDrawnCard = card == _drawnCard;
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: SuddenDeathSizes.spacingXs),
               child: PlayingCardWidget(
@@ -283,13 +314,26 @@ class _GameTableScreenState extends State<GameTableScreen> {
   }
 
   Widget _buildActionButtons() {
+    // If we've drawn a card, show DISCARD button
+    if (_drawnCard != null) {
+      return ElevatedButton.icon(
+        onPressed: _selectedCard != null ? _handleDiscard : null,
+        icon: const Icon(Icons.delete_outline),
+        label: const Text('DISCARD'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: SuddenDeathColors.crimson,
+        ),
+      );
+    }
+
+    // Otherwise show DRAW and SWAP buttons
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         ElevatedButton.icon(
-          onPressed: _selectedCard != null ? _handleDrawAndDiscard : null,
+          onPressed: _handleDraw,
           icon: const Icon(Icons.style),
-          label: const Text('DRAW & DISCARD'),
+          label: const Text('DRAW'),
           style: ElevatedButton.styleFrom(
             backgroundColor: SuddenDeathColors.charcoal,
           ),
@@ -313,8 +357,20 @@ class _GameTableScreenState extends State<GameTableScreen> {
     });
   }
 
-  void _handleDrawAndDiscard() {
-    if (_selectedCard == null) return;
+  void _handleDraw() {
+    final gameProvider = context.read<GameProvider>();
+    final round = gameProvider.currentRound;
+    if (round == null || round.deck.isEmpty) return;
+
+    // Draw the top card from the deck
+    setState(() {
+      _drawnCard = round.deck.first;
+      _selectedCard = null; // Clear selection
+    });
+  }
+
+  void _handleDiscard() {
+    if (_selectedCard == null || _drawnCard == null) return;
     final gameProvider = context.read<GameProvider>();
 
     setState(() => _isProcessingTurn = true);
@@ -325,6 +381,7 @@ class _GameTableScreenState extends State<GameTableScreen> {
         cardToDiscard: _selectedCard!,
       );
       _selectedCard = null;
+      _drawnCard = null; // Clear drawn card
       _processNextTurn(gameProvider);
     } finally {
       setState(() => _isProcessingTurn = false);

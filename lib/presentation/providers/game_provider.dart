@@ -44,11 +44,13 @@ class GameProvider extends ChangeNotifier {
   void startGame({
     required List<Player> players,
     required GameMode mode,
+    int totalRounds = 5, // Default to 5 rounds for practice
   }) {
     final gameState = GameState(
       players: players,
       mode: mode,
       roundNumber: 0,
+      totalRounds: totalRounds,
       isComplete: false,
     );
     _gameRepository.startGame(gameState);

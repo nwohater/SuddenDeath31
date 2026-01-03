@@ -18,6 +18,7 @@ class PracticeSetupScreen extends StatefulWidget {
 class _PracticeSetupScreenState extends State<PracticeSetupScreen> {
   int _numOpponents = 2;
   int _startingChips = 10;
+  int _totalRounds = 5;
 
   @override
   Widget build(BuildContext context) {
@@ -77,6 +78,13 @@ class _PracticeSetupScreenState extends State<PracticeSetupScreen> {
           value: '$_startingChips',
           onDecrease: _startingChips > 5 ? () => setState(() => _startingChips -= 5) : null,
           onIncrease: _startingChips < 50 ? () => setState(() => _startingChips += 5) : null,
+        ),
+        const SizedBox(height: SuddenDeathSizes.spacingMd),
+        _buildOptionCard(
+          title: 'Total Rounds',
+          value: '$_totalRounds',
+          onDecrease: _totalRounds > 5 ? () => setState(() => _totalRounds -= 5) : null,
+          onIncrease: _totalRounds < 15 ? () => setState(() => _totalRounds += 5) : null,
         ),
       ],
     );
@@ -173,7 +181,11 @@ class _PracticeSetupScreenState extends State<PracticeSetupScreen> {
 
     // Start the game
     final players = [humanPlayer, ...selectedNPCs];
-    gameProvider.startGame(players: players, mode: GameMode.practice);
+    gameProvider.startGame(
+      players: players,
+      mode: GameMode.practice,
+      totalRounds: _totalRounds,
+    );
 
     // Navigate to game table
     Navigator.pushReplacement(

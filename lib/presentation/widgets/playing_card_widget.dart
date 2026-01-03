@@ -121,8 +121,8 @@ class PlayingCardWidget extends StatelessWidget {
     return Center(
       child: Icon(
         Icons.casino,
-        color: SuddenDeathColors.bloodRed.withOpacity(0.3),
-        size: 32,
+        color: SuddenDeathColors.crimson.withOpacity(0.8),
+        size: 40,
       ),
     );
   }
