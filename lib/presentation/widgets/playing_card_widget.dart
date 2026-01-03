@@ -144,50 +144,33 @@ class PlayingCardWidget extends StatelessWidget {
 
   String _getSuitSymbol() {
     if (card == null) return '';
-    
-    switch (card!.suit) {
-      case game.Suit.hearts:
-        return '♥';
-      case game.Suit.diamonds:
-        return '♦';
-      case game.Suit.spades:
-        return '♠';
-      case game.Suit.clubs:
-        return '♣';
-    }
+
+    return switch (card!.suit) {
+      game.Suit.hearts => '♥',
+      game.Suit.diamonds => '♦',
+      game.Suit.spades => '♠',
+      game.Suit.clubs => '♣',
+    };
   }
 
   String _getRankSymbol() {
     if (card == null) return '';
-    
-    switch (card!.rank) {
-      case game.Rank.ace:
-        return 'A';
-      case game.Rank.two:
-        return '2';
-      case game.Rank.three:
-        return '3';
-      case game.Rank.four:
-        return '4';
-      case game.Rank.five:
-        return '5';
-      case game.Rank.six:
-        return '6';
-      case game.Rank.seven:
-        return '7';
-      case game.Rank.eight:
-        return '8';
-      case game.Rank.nine:
-        return '9';
-      case game.Rank.ten:
-        return '10';
-      case game.Rank.jack:
-        return 'J';
-      case game.Rank.queen:
-        return 'Q';
-      case game.Rank.king:
-        return 'K';
-    }
+
+    return switch (card!.rank) {
+      game.Rank.ace => 'A',
+      game.Rank.two => '2',
+      game.Rank.three => '3',
+      game.Rank.four => '4',
+      game.Rank.five => '5',
+      game.Rank.six => '6',
+      game.Rank.seven => '7',
+      game.Rank.eight => '8',
+      game.Rank.nine => '9',
+      game.Rank.ten => '10',
+      game.Rank.jack => 'J',
+      game.Rank.queen => 'Q',
+      game.Rank.king => 'K',
+    };
   }
 }
 

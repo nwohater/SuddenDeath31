@@ -123,8 +123,6 @@ class GameProvider extends ChangeNotifier {
     final totalActions = turnsPerPlayer * playersAfterBet.length;
     final calculatedPot = betAmount * playersAfterBet.length;
 
-    debugPrint('🎲 Starting round: bet=$betAmount, players=${playersAfterBet.length}, pot=$calculatedPot');
-
     final updatedRound = currentRound!.copyWith(
       players: playersAfterBet,
       betAmount: betAmount,

@@ -234,6 +234,8 @@ class _GameTableScreenState extends State<GameTableScreen> {
   }
 
   Widget _buildCenterArea(round) {
+    final discardCard = round.discardPile.isNotEmpty ? round.discardPile.last : null;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -242,7 +244,7 @@ class _GameTableScreenState extends State<GameTableScreen> {
         const SizedBox(width: SuddenDeathSizes.spacingXl),
         // Discard pile
         PlayingCardWidget(
-          card: round.discardPile.isNotEmpty ? round.discardPile.last : null,
+          card: discardCard,
           faceUp: true,
         ),
       ],

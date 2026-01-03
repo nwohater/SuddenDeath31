@@ -108,8 +108,8 @@ class SuddenDeathColors {
 
   static const Color hearts = crimson;
   static const Color diamonds = crimson;
-  static const Color spades = bone;
-  static const Color clubs = bone;
+  static const Color spades = Color(0xFF1A1A1D); // Dark charcoal for visibility on light cards
+  static const Color clubs = Color(0xFF1A1A1D); // Dark charcoal for visibility on light cards
 }
 
 // =============================================================================
@@ -153,13 +153,13 @@ class SuddenDeathGradients {
     ],
   );
 
-  /// Card back gradient
+  /// Card back gradient - lighter for visibility
   static const LinearGradient cardBack = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      SuddenDeathColors.nightshade,
-      SuddenDeathColors.abyss,
+      SuddenDeathColors.slate,
+      SuddenDeathColors.charcoal,
       SuddenDeathColors.bloodstone,
     ],
   );
@@ -317,8 +317,8 @@ class SuddenDeathDecorations {
     gradient: SuddenDeathGradients.cardBack,
     borderRadius: BorderRadius.circular(12),
     border: Border.all(
-      color: SuddenDeathColors.bloodRed.withOpacity(0.3),
-      width: 1,
+      color: SuddenDeathColors.bloodRed.withOpacity(0.6),
+      width: 2,
     ),
     boxShadow: SuddenDeathShadows.cardShadow,
   );
