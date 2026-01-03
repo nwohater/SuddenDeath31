@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/sudden_death_theme.dart';
+import 'practice_setup_screen.dart';
 
 class MainMenuScreen extends StatelessWidget {
   const MainMenuScreen({super.key});
@@ -79,7 +80,10 @@ class MainMenuScreen extends StatelessWidget {
             label: 'PRACTICE',
             gradient: SuddenDeathGradients.buttonDefault,
             onPressed: () {
-              // TODO: Navigate to practice mode
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const PracticeSetupScreen()),
+              );
             },
           ),
           const SizedBox(height: SuddenDeathSizes.spacingMd),
