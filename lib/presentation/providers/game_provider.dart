@@ -186,6 +186,29 @@ class GameProvider extends ChangeNotifier {
     }
   }
 
+  /// Discard the drawn card without adding it to hand
+  void discardDrawnCard(Card drawnCard) {
+    if (currentRound == null) return;
+
+    // Remove drawn card from deck and add to discard pile
+    final newDeck = currentRound!.deck.sublist(1);
+    final newDiscardPile = [...currentRound!.discardPile, drawnCard];
+
+    // Move to next player
+    final updatedRound = currentRound!.copyWith(
+      deck: newDeck,
+      discardPile: newDiscardPile,
+    ).nextPlayer();
+
+    _gameRepository.updateRound(updatedRound);
+    notifyListeners();
+
+    // Check if round is over
+    if (updatedRound.turnsRemaining <= 0) {
+      _resolveRound();
+    }
+  }
+
   /// Resolve the current round
   void _resolveRound({String? instantWinnerId}) {
     if (currentRound == null) return;
@@ -198,22 +221,45 @@ class GameProvider extends ChangeNotifier {
     // Store resolution for UI to display
     _lastRoundResolution = resolution;
 
-    // Update players with new chip counts
-    _gameRepository.updatePlayers(resolution.updatedPlayers);
-
-    // Check if game is over
+    // Check if game is over (either all rounds complete or only one player left)
     final gameOverResult = _checkGameOverUseCase.execute(resolution.updatedPlayers);
+    final nextRoundNumber = currentGame!.roundNumber + 1;
+    final isLastRound = nextRoundNumber >= currentGame!.totalRounds;
 
-    if (gameOverResult.isGameOver) {
+    if (gameOverResult.isGameOver || isLastRound) {
+      // Game is over - determine winner
+      String finalWinnerId;
+      if (gameOverResult.isGameOver) {
+        // Only one player has chips
+        finalWinnerId = gameOverResult.winnerId!;
+      } else {
+        // All rounds complete - player with most chips wins
+        finalWinnerId = resolution.updatedPlayers
+            .reduce((a, b) => a.chips > b.chips ? a : b)
+            .id;
+      }
+
       _gameRepository.updateGame(
         currentGame!.copyWith(
+          players: resolution.updatedPlayers,
+          clearCurrentRound: true,
           isComplete: true,
-          winnerId: gameOverResult.winnerId,
+          winnerId: finalWinnerId,
         ),
       );
     } else {
-      // Complete the round
-      _gameRepository.completeRound();
+      // Round is complete but game continues
+      // Rotate opener to next player
+      final nextOpenerIndex = (currentGame!.openerIndex + 1) % currentGame!.players.length;
+
+      _gameRepository.updateGame(
+        currentGame!.copyWith(
+          players: resolution.updatedPlayers,
+          clearCurrentRound: true,
+          roundNumber: nextRoundNumber,
+          openerIndex: nextOpenerIndex,
+        ),
+      );
     }
 
     notifyListeners();

@@ -39,6 +39,8 @@ class GameState {
     RoundState? currentRound,
     bool? isComplete,
     String? winnerId,
+    bool clearCurrentRound = false,
+    bool clearWinnerId = false,
   }) {
     return GameState(
       players: players ?? this.players,
@@ -46,9 +48,9 @@ class GameState {
       roundNumber: roundNumber ?? this.roundNumber,
       totalRounds: totalRounds ?? this.totalRounds,
       openerIndex: openerIndex ?? this.openerIndex,
-      currentRound: currentRound ?? this.currentRound,
+      currentRound: clearCurrentRound ? null : (currentRound ?? this.currentRound),
       isComplete: isComplete ?? this.isComplete,
-      winnerId: winnerId ?? this.winnerId,
+      winnerId: clearWinnerId ? null : (winnerId ?? this.winnerId),
     );
   }
 }

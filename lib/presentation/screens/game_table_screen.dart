@@ -24,6 +24,7 @@ class _GameTableScreenState extends State<GameTableScreen> {
   game.Card? _selectedCard;
   game.Card? _drawnCard; // Card drawn from deck (shown as 4th card)
   bool _isProcessingTurn = false;
+  bool _isShowingResultDialog = false;
 
   @override
   Widget build(BuildContext context) {
@@ -37,8 +38,12 @@ class _GameTableScreenState extends State<GameTableScreen> {
             builder: (context, gameProvider, child) {
               // Show round result dialog if available
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (gameProvider.lastRoundResolution != null) {
+                if (gameProvider.lastRoundResolution != null && !_isShowingResultDialog) {
                   _showRoundResultDialog(context, gameProvider);
+                }
+                // Show game over dialog if game is complete
+                if (gameProvider.isGameOver && !_isShowingResultDialog) {
+                  _showGameOverDialog(context, gameProvider);
                 }
               });
 
@@ -81,7 +86,7 @@ class _GameTableScreenState extends State<GameTableScreen> {
   Widget _buildBetweenRoundsView(BuildContext context, GameProvider gameProvider) {
     // Auto-deal cards first
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_isProcessingTurn) {
+      if (!_isProcessingTurn && !_isShowingResultDialog) {
         _dealCardsAndShowBetting(context, gameProvider);
       }
     });
@@ -104,17 +109,53 @@ class _GameTableScreenState extends State<GameTableScreen> {
   }
 
   void _dealCardsAndShowBetting(BuildContext context, GameProvider gameProvider) {
-    setState(() => _isProcessingTurn = true);
+    setState(() {
+      _isProcessingTurn = true;
+      // Clear any leftover state from previous round
+      _drawnCard = null;
+      _selectedCard = null;
+    });
 
     // Deal cards first
     gameProvider.dealCards();
 
     setState(() => _isProcessingTurn = false);
 
-    // Then show betting dialog
+    // Check who the opener is
+    final round = gameProvider.currentRound;
+    if (round == null) return;
+
+    final opener = round.players[round.openerIndex];
+
+    // Then show betting dialog or let NPC decide
     Future.delayed(const Duration(milliseconds: 500), () {
-      _showBettingDialog(context, gameProvider);
+      if (opener.isNPC) {
+        // NPC decides the bet
+        _processNPCBet(gameProvider, opener);
+      } else {
+        // Human player decides the bet
+        _showBettingDialog(context, gameProvider);
+      }
     });
+  }
+
+  void _processNPCBet(GameProvider gameProvider, Player npcOpener) {
+    final round = gameProvider.currentRound;
+    if (round == null) return;
+
+    final players = gameProvider.players;
+    final maxBet = players.map((p) => p.chips).reduce((a, b) => a < b ? a : b).clamp(1, 5);
+
+    // NPC decides bet amount
+    final betAmount = _npcEngine.decideBetAmount(
+      profile: npcOpener.npcProfile!,
+      hand: npcOpener.hand,
+      maxBet: maxBet,
+      currentChips: npcOpener.chips,
+    );
+
+    // Start the round with NPC's bet
+    _startRound(gameProvider, betAmount);
   }
 
   void _showBettingDialog(BuildContext context, GameProvider gameProvider) {
@@ -159,6 +200,16 @@ class _GameTableScreenState extends State<GameTableScreen> {
     final players = round.players;
     final currentPlayerIndex = round.currentPlayerIndex;
     final humanPlayer = players.first; // Assume first player is human
+
+    // Clear drawn card and selection if it's not the human player's turn
+    if (currentPlayerIndex != 0 && (_drawnCard != null || _selectedCard != null)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          _drawnCard = null;
+          _selectedCard = null;
+        });
+      });
+    }
 
     return Stack(
       children: [
@@ -364,15 +415,40 @@ class _GameTableScreenState extends State<GameTableScreen> {
     if (_selectedCard == null || _drawnCard == null) return;
     final gameProvider = context.read<GameProvider>();
 
-    setState(() => _isProcessingTurn = true);
-    try {
-      gameProvider.playTurn(
-        playerId: 'human',
-        action: TurnAction.drawAndDiscard,
-        cardToDiscard: _selectedCard!,
-      );
+    // Save references before clearing
+    final cardToDiscard = _selectedCard!;
+    final drawnCard = _drawnCard!;
+
+    // Check if player is discarding the drawn card
+    final isDiscardingDrawnCard = cardToDiscard == drawnCard;
+
+    // Clear state BEFORE calling playTurn to avoid showing stale cards
+    setState(() {
+      _isProcessingTurn = true;
       _selectedCard = null;
-      _drawnCard = null; // Clear drawn card
+      _drawnCard = null;
+    });
+
+    try {
+      if (isDiscardingDrawnCard) {
+        // If discarding the drawn card, just discard it without adding to hand
+        // This is handled by passing a special action or handling it differently
+        // For now, we need to pick a card from the hand to "discard" and then
+        // actually discard the drawn card
+        // Actually, we should just end the turn without changing the hand
+        final round = gameProvider.currentRound;
+        if (round != null) {
+          // Add drawn card directly to discard pile without modifying hand
+          gameProvider.discardDrawnCard(drawnCard);
+        }
+      } else {
+        // Normal case: discard a card from hand and add drawn card
+        gameProvider.playTurn(
+          playerId: 'human',
+          action: TurnAction.drawAndDiscard,
+          cardToDiscard: cardToDiscard,
+        );
+      }
       _processNextTurn(gameProvider);
     } finally {
       setState(() => _isProcessingTurn = false);
@@ -385,15 +461,24 @@ class _GameTableScreenState extends State<GameTableScreen> {
     final round = gameProvider.currentRound;
     if (round == null || round.discardPile.isEmpty) return;
 
-    setState(() => _isProcessingTurn = true);
+    // Save references before clearing
+    final cardToSwap = _selectedCard!;
+    final topDiscard = round.discardPile.last;
+
+    // Clear state BEFORE calling playTurn to avoid showing stale cards
+    setState(() {
+      _isProcessingTurn = true;
+      _selectedCard = null;
+      _drawnCard = null;
+    });
+
     try {
       gameProvider.playTurn(
         playerId: 'human',
         action: TurnAction.swapWithDiscard,
-        cardToDiscard: round.discardPile.last,
-        cardToSwap: _selectedCard!,
+        cardToDiscard: topDiscard,
+        cardToSwap: cardToSwap,
       );
-      _selectedCard = null;
       _processNextTurn(gameProvider);
     } finally {
       setState(() => _isProcessingTurn = false);
@@ -446,6 +531,20 @@ class _GameTableScreenState extends State<GameTableScreen> {
     final resolution = gameProvider.lastRoundResolution!;
     final winner = gameProvider.players.firstWhere((p) => p.id == resolution.winnerId);
 
+    // Determine the type of instant win
+    String? instantWinMessage;
+    if (resolution.wasInstantWin) {
+      if (winner.hand.is31) {
+        instantWinMessage = '🎯 Perfect 31!';
+      } else if (winner.hand.isBlitz) {
+        instantWinMessage = '💥 Blitz!';
+      }
+    }
+
+    setState(() {
+      _isShowingResultDialog = true;
+    });
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -477,12 +576,13 @@ class _GameTableScreenState extends State<GameTableScreen> {
               style: SuddenDeathTextStyles.body,
               textAlign: TextAlign.center,
             ),
-            if (resolution.wasInstantWin) ...[
+            if (instantWinMessage != null) ...[
               const SizedBox(height: SuddenDeathSizes.spacingMd),
               Text(
-                '🎯 Perfect 31!',
+                instantWinMessage,
                 style: SuddenDeathTextStyles.body.copyWith(
                   color: SuddenDeathColors.crimson,
+                  fontSize: 20,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -494,6 +594,9 @@ class _GameTableScreenState extends State<GameTableScreen> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
+                setState(() {
+                  _isShowingResultDialog = false;
+                });
                 gameProvider.clearLastRoundResolution();
                 Navigator.of(context).pop();
               },
@@ -503,6 +606,136 @@ class _GameTableScreenState extends State<GameTableScreen> {
               ),
               child: Text(
                 'CONTINUE',
+                style: SuddenDeathTextStyles.button,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showGameOverDialog(BuildContext context, GameProvider gameProvider) {
+    final game = gameProvider.currentGame!;
+    final winner = game.players.firstWhere((p) => p.id == game.winnerId);
+
+    // Sort players by chip count (descending)
+    final sortedPlayers = List<Player>.from(game.players)
+      ..sort((a, b) => b.chips.compareTo(a.chips));
+
+    setState(() {
+      _isShowingResultDialog = true;
+    });
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: SuddenDeathColors.abyss,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(SuddenDeathSizes.radiusLg),
+          side: BorderSide(color: SuddenDeathColors.gold.withOpacity(0.3)),
+        ),
+        title: Text(
+          'GAME OVER',
+          style: SuddenDeathTextStyles.title.copyWith(fontSize: 28),
+          textAlign: TextAlign.center,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Winner section
+            Text(
+              '🏆',
+              style: const TextStyle(fontSize: 48),
+            ),
+            const SizedBox(height: SuddenDeathSizes.spacingSm),
+            Text(
+              winner.name,
+              style: SuddenDeathTextStyles.score.copyWith(
+                fontSize: 32,
+                color: SuddenDeathColors.gold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            Text(
+              'WINS!',
+              style: SuddenDeathTextStyles.body.copyWith(
+                fontSize: 18,
+                color: SuddenDeathColors.gold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: SuddenDeathSizes.spacingLg),
+
+            // Final standings
+            Text(
+              'FINAL STANDINGS',
+              style: SuddenDeathTextStyles.body.copyWith(
+                fontSize: 14,
+                color: SuddenDeathColors.bone.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: SuddenDeathSizes.spacingSm),
+
+            // Player list with chip counts
+            ...sortedPlayers.asMap().entries.map((entry) {
+              final index = entry.key;
+              final player = entry.value;
+              final isWinner = player.id == winner.id;
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: SuddenDeathSizes.spacingXs),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          '${index + 1}. ',
+                          style: SuddenDeathTextStyles.body.copyWith(
+                            color: SuddenDeathColors.bone.withOpacity(0.5),
+                          ),
+                        ),
+                        Text(
+                          player.name,
+                          style: SuddenDeathTextStyles.body.copyWith(
+                            color: isWinner ? SuddenDeathColors.gold : SuddenDeathColors.bone,
+                            fontWeight: isWinner ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      '${player.chips} chips',
+                      style: SuddenDeathTextStyles.body.copyWith(
+                        color: isWinner ? SuddenDeathColors.gold : SuddenDeathColors.bone,
+                        fontWeight: isWinner ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _isShowingResultDialog = false;
+                });
+                gameProvider.endGame();
+                Navigator.of(context).pop();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: SuddenDeathColors.crimson,
+                padding: const EdgeInsets.symmetric(vertical: SuddenDeathSizes.spacingMd),
+              ),
+              child: Text(
+                'BACK TO MENU',
                 style: SuddenDeathTextStyles.button,
               ),
             ),
