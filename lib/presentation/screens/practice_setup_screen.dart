@@ -150,12 +150,11 @@ class _PracticeSetupScreenState extends State<PracticeSetupScreen> {
     final gameProvider = context.read<GameProvider>();
 
     // Create human player
-    final humanPlayer = Player(
+    final humanPlayer = Player.human(
       id: 'human',
       name: 'You',
       chips: _startingChips,
-      isNPC: false,
-      hand: Hand.empty(),
+      position: 0,
     );
 
     // Create NPC players
@@ -163,13 +162,12 @@ class _PracticeSetupScreenState extends State<PracticeSetupScreen> {
     final selectedNPCs = <Player>[];
     for (int i = 0; i < _numOpponents; i++) {
       final npc = allNPCs[i % allNPCs.length];
-      selectedNPCs.add(Player(
+      selectedNPCs.add(Player.npc(
         id: npc.id,
         name: npc.name,
         chips: _startingChips,
-        isNPC: true,
-        hand: Hand.empty(),
-        npcProfile: npc,
+        position: i + 1,
+        profile: npc,
       ));
     }
 

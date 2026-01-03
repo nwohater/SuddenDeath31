@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'hand.dart';
+import 'npc_profile.dart';
 
 /// Represents a player in the game
 class Player extends Equatable {
@@ -9,6 +10,7 @@ class Player extends Equatable {
   final Hand hand;
   final bool isNPC;
   final int position; // 0-3, clockwise from opener
+  final NPCProfile? npcProfile; // Only for NPC players
 
   const Player({
     required this.id,
@@ -17,6 +19,7 @@ class Player extends Equatable {
     required this.hand,
     required this.isNPC,
     required this.position,
+    this.npcProfile,
   });
 
   /// Create a human player
@@ -33,6 +36,7 @@ class Player extends Equatable {
       hand: Hand.empty(),
       isNPC: false,
       position: position,
+      npcProfile: null,
     );
   }
 
@@ -42,6 +46,7 @@ class Player extends Equatable {
     required String name,
     required int chips,
     required int position,
+    required NPCProfile profile,
   }) {
     return Player(
       id: id,
@@ -50,6 +55,7 @@ class Player extends Equatable {
       hand: Hand.empty(),
       isNPC: true,
       position: position,
+      npcProfile: profile,
     );
   }
 
@@ -68,6 +74,7 @@ class Player extends Equatable {
       hand: hand,
       isNPC: isNPC,
       position: position,
+      npcProfile: npcProfile,
     );
   }
 
@@ -90,6 +97,7 @@ class Player extends Equatable {
       hand: newHand,
       isNPC: isNPC,
       position: position,
+      npcProfile: npcProfile,
     );
   }
 
@@ -99,7 +107,7 @@ class Player extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, name, chips, hand, isNPC, position];
+  List<Object?> get props => [id, name, chips, hand, isNPC, position, npcProfile];
 
   @override
   String toString() => '$name (${chips}c) - ${hand.toString()}';
