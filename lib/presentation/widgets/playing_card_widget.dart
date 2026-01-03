@@ -22,6 +22,9 @@ class PlayingCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // If card is null, always show back regardless of faceUp
+    final shouldShowFace = faceUp && card != null;
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -29,7 +32,7 @@ class PlayingCardWidget extends StatelessWidget {
         width: width,
         height: height,
         decoration: BoxDecoration(
-          gradient: faceUp ? SuddenDeathGradients.cardFace : SuddenDeathGradients.cardBack,
+          gradient: shouldShowFace ? SuddenDeathGradients.cardFace : SuddenDeathGradients.cardBack,
           borderRadius: BorderRadius.circular(SuddenDeathSizes.cardRadius),
           border: Border.all(
             color: selected ? SuddenDeathColors.gold : Colors.transparent,
@@ -37,7 +40,7 @@ class PlayingCardWidget extends StatelessWidget {
           ),
           boxShadow: selected ? SuddenDeathShadows.cardGlow : SuddenDeathShadows.cardShadow,
         ),
-        child: faceUp && card != null ? _buildCardFace() : _buildCardBack(),
+        child: shouldShowFace ? _buildCardFace() : _buildCardBack(),
       ),
     );
   }

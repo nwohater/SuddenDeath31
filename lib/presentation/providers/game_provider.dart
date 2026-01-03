@@ -121,12 +121,16 @@ class GameProvider extends ChangeNotifier {
     // Update the round with the actual bet amount and recalculate turns
     final turnsPerPlayer = _getTurnsPerPlayer(betAmount);
     final totalActions = turnsPerPlayer * playersAfterBet.length;
+    final calculatedPot = betAmount * playersAfterBet.length;
+
+    debugPrint('🎲 Starting round: bet=$betAmount, players=${playersAfterBet.length}, pot=$calculatedPot');
+
     final updatedRound = currentRound!.copyWith(
       players: playersAfterBet,
       betAmount: betAmount,
       totalTurns: totalActions,
       turnsRemaining: totalActions,
-      pot: betAmount * playersAfterBet.length,
+      pot: calculatedPot,
     );
 
     _gameRepository.updateGame(

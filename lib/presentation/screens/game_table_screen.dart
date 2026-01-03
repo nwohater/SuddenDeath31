@@ -111,6 +111,7 @@ class _GameTableScreenState extends State<GameTableScreen> {
   void _showBettingDialog(BuildContext context, GameProvider gameProvider) {
     final players = gameProvider.players;
     final maxBet = players.map((p) => p.chips).reduce((a, b) => a < b ? a : b).clamp(1, 5);
+    int selectedBet = 1;
 
     showDialog(
       context: context,
@@ -121,12 +122,12 @@ class _GameTableScreenState extends State<GameTableScreen> {
           minBet: 1,
           maxBet: maxBet,
           initialBet: 1,
-          onBetChanged: (bet) {},
+          onBetChanged: (bet) {
+            selectedBet = bet;
+          },
           onConfirm: () {
             Navigator.pop(context);
-            // Get the bet amount from the widget state
-            final betAmount = 1; // TODO: Get from widget
-            _startRound(gameProvider, betAmount);
+            _startRound(gameProvider, selectedBet);
           },
         ),
       ),
