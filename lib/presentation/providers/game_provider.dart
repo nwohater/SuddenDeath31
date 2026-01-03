@@ -90,8 +90,8 @@ class GameProvider extends ChangeNotifier {
       betAmount: 0, // No bet yet
       totalTurns: 0,
       turnsRemaining: 0,
-      currentPlayerIndex: 0,
-      openerIndex: 0,
+      currentPlayerIndex: currentGame!.openerIndex,
+      openerIndex: currentGame!.openerIndex,
       isComplete: false,
       isSuddenDeathMode: players.every((p) => p.chips <= 2),
     );

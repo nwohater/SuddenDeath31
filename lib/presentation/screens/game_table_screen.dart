@@ -218,10 +218,21 @@ class _GameTableScreenState extends State<GameTableScreen> {
   }
 
   Widget _buildOpponentPlayers(List<Player> opponents) {
+    final gameProvider = context.read<GameProvider>();
+    final round = gameProvider.currentRound;
+
     return Wrap(
       spacing: SuddenDeathSizes.spacingMd,
       children: opponents.map((player) {
-        return PlayerPanelWidget(player: player);
+        // Check if this player is the opener
+        final isOpener = round != null &&
+                        round.players.indexOf(player) == round.openerIndex;
+        final betAmount = isOpener ? round?.betAmount : null;
+
+        return PlayerPanelWidget(
+          player: player,
+          betAmount: betAmount,
+        );
       }).toList(),
     );
   }
@@ -245,15 +256,26 @@ class _GameTableScreenState extends State<GameTableScreen> {
   }
 
   Widget _buildHumanPlayerArea(Player player, bool isActive) {
+    final gameProvider = context.read<GameProvider>();
+    final round = gameProvider.currentRound;
+
     // Build list of all cards (hand + drawn card if any)
     final allCards = [...player.hand.cards];
     if (_drawnCard != null) {
       allCards.add(_drawnCard!);
     }
 
+    // Check if human player is the opener
+    final isOpener = round != null && round.openerIndex == 0;
+    final betAmount = isOpener ? round?.betAmount : null;
+
     return Column(
       children: [
-        PlayerPanelWidget(player: player, isActive: isActive),
+        PlayerPanelWidget(
+          player: player,
+          isActive: isActive,
+          betAmount: betAmount,
+        ),
         const SizedBox(height: SuddenDeathSizes.spacingMd),
         // Player's cards (including drawn card if any)
         Row(

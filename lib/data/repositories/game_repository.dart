@@ -43,9 +43,13 @@ class GameRepository {
     if (_currentGame == null) {
       throw Exception('No active game');
     }
+    // Rotate opener to next player
+    final nextOpenerIndex = (_currentGame!.openerIndex + 1) % _currentGame!.players.length;
+
     _currentGame = _currentGame!.copyWith(
       currentRound: null,
       roundNumber: _currentGame!.roundNumber + 1,
+      openerIndex: nextOpenerIndex,
     );
   }
   

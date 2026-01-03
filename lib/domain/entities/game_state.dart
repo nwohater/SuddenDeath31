@@ -14,6 +14,7 @@ class GameState {
   final GameMode mode;
   final int roundNumber;
   final int totalRounds; // Total rounds in this game (5, 10, or 15)
+  final int openerIndex; // Index of player who will open betting next round
   final RoundState? currentRound;
   final bool isComplete;
   final String? winnerId;
@@ -23,6 +24,7 @@ class GameState {
     required this.mode,
     required this.roundNumber,
     required this.totalRounds,
+    this.openerIndex = 0,
     this.currentRound,
     this.isComplete = false,
     this.winnerId,
@@ -33,6 +35,7 @@ class GameState {
     GameMode? mode,
     int? roundNumber,
     int? totalRounds,
+    int? openerIndex,
     RoundState? currentRound,
     bool? isComplete,
     String? winnerId,
@@ -42,6 +45,7 @@ class GameState {
       mode: mode ?? this.mode,
       roundNumber: roundNumber ?? this.roundNumber,
       totalRounds: totalRounds ?? this.totalRounds,
+      openerIndex: openerIndex ?? this.openerIndex,
       currentRound: currentRound ?? this.currentRound,
       isComplete: isComplete ?? this.isComplete,
       winnerId: winnerId ?? this.winnerId,

@@ -6,12 +6,14 @@ class PlayerPanelWidget extends StatelessWidget {
   final Player player;
   final bool isActive;
   final bool isDealer;
+  final int? betAmount; // Show bet amount if this player is the opener
 
   const PlayerPanelWidget({
     super.key,
     required this.player,
     this.isActive = false,
     this.isDealer = false,
+    this.betAmount,
   });
 
   @override
@@ -82,7 +84,7 @@ class PlayerPanelWidget extends StatelessWidget {
           ),
           
           const SizedBox(height: SuddenDeathSizes.spacingSm),
-          
+
           // Hand score (if visible)
           if (player.hand.cards.isNotEmpty)
             Container(
@@ -103,6 +105,50 @@ class PlayerPanelWidget extends StatelessWidget {
                 ),
               ),
             ),
+
+          // Bet amount (if this player is the opener)
+          if (betAmount != null) ...[
+            const SizedBox(height: SuddenDeathSizes.spacingSm),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: SuddenDeathSizes.spacingSm,
+                vertical: SuddenDeathSizes.spacingXs,
+              ),
+              decoration: BoxDecoration(
+                color: SuddenDeathColors.crimson.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(SuddenDeathSizes.radiusSm),
+                border: Border.all(
+                  color: SuddenDeathColors.crimson,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'BET',
+                    style: SuddenDeathTextStyles.caption.copyWith(
+                      fontSize: 10,
+                      color: SuddenDeathColors.bone,
+                    ),
+                  ),
+                  const SizedBox(width: SuddenDeathSizes.spacingXs),
+                  const Icon(
+                    Icons.monetization_on,
+                    color: SuddenDeathColors.gold,
+                    size: 12,
+                  ),
+                  Text(
+                    '$betAmount',
+                    style: SuddenDeathTextStyles.button.copyWith(
+                      fontSize: 12,
+                      color: SuddenDeathColors.gold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
