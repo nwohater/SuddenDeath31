@@ -35,6 +35,13 @@ class _GameTableScreenState extends State<GameTableScreen> {
         child: SafeArea(
           child: Consumer<GameProvider>(
             builder: (context, gameProvider, child) {
+              // Show round result dialog if available
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (gameProvider.lastRoundResolution != null) {
+                  _showRoundResultDialog(context, gameProvider);
+                }
+              });
+
               if (!gameProvider.hasActiveGame) {
                 return _buildNoGameView(context);
               }
@@ -411,6 +418,76 @@ class _GameTableScreenState extends State<GameTableScreen> {
     } finally {
       setState(() => _isProcessingTurn = false);
     }
+  }
+
+  void _showRoundResultDialog(BuildContext context, GameProvider gameProvider) {
+    final resolution = gameProvider.lastRoundResolution!;
+    final winner = gameProvider.players.firstWhere((p) => p.id == resolution.winnerId);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: SuddenDeathColors.abyss,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(SuddenDeathSizes.radiusLg),
+          side: BorderSide(color: SuddenDeathColors.gold.withOpacity(0.3)),
+        ),
+        title: Text(
+          resolution.wasInstantWin ? 'INSTANT WIN!' : 'ROUND COMPLETE',
+          style: SuddenDeathTextStyles.title.copyWith(fontSize: 24),
+          textAlign: TextAlign.center,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              winner.name,
+              style: SuddenDeathTextStyles.score.copyWith(
+                fontSize: 32,
+                color: SuddenDeathColors.gold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: SuddenDeathSizes.spacingMd),
+            Text(
+              'wins ${resolution.winAmount} chips!',
+              style: SuddenDeathTextStyles.body,
+              textAlign: TextAlign.center,
+            ),
+            if (resolution.wasInstantWin) ...[
+              const SizedBox(height: SuddenDeathSizes.spacingMd),
+              Text(
+                '🎯 Perfect 31!',
+                style: SuddenDeathTextStyles.body.copyWith(
+                  color: SuddenDeathColors.crimson,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                gameProvider.clearLastRoundResolution();
+                Navigator.of(context).pop();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: SuddenDeathColors.crimson,
+                padding: const EdgeInsets.symmetric(vertical: SuddenDeathSizes.spacingMd),
+              ),
+              child: Text(
+                'CONTINUE',
+                style: SuddenDeathTextStyles.button,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

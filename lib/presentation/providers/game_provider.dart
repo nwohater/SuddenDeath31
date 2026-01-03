@@ -20,6 +20,8 @@ class GameProvider extends ChangeNotifier {
   final CheckGameOverUseCase _checkGameOverUseCase;
   final ValidateBetUseCase _validateBetUseCase;
 
+  RoundResolution? _lastRoundResolution;
+
   GameProvider({
     required GameRepository gameRepository,
     required DealInitialHandsUseCase dealInitialHandsUseCase,
@@ -39,6 +41,7 @@ class GameProvider extends ChangeNotifier {
   List<Player> get players => currentGame?.players ?? [];
   bool get hasActiveGame => _gameRepository.hasActiveGame;
   bool get isGameOver => currentGame?.isComplete ?? false;
+  RoundResolution? get lastRoundResolution => _lastRoundResolution;
 
   /// Start a new game
   void startGame({
@@ -192,6 +195,9 @@ class GameProvider extends ChangeNotifier {
       instantWinnerId: instantWinnerId,
     );
 
+    // Store resolution for UI to display
+    _lastRoundResolution = resolution;
+
     // Update players with new chip counts
     _gameRepository.updatePlayers(resolution.updatedPlayers);
 
@@ -210,6 +216,12 @@ class GameProvider extends ChangeNotifier {
       _gameRepository.completeRound();
     }
 
+    notifyListeners();
+  }
+
+  /// Clear the last round resolution (call after showing result dialog)
+  void clearLastRoundResolution() {
+    _lastRoundResolution = null;
     notifyListeners();
   }
 
