@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/card.dart';
 import '../../domain/entities/game_state.dart';
+import '../../domain/entities/hand.dart';
 import '../../domain/entities/player.dart';
 import '../../domain/entities/round_state.dart';
 import '../../domain/usecases/deal_initial_hands_usecase.dart';
@@ -58,17 +59,41 @@ class GameProvider extends ChangeNotifier {
   void dealCards() {
     if (currentGame == null) return;
 
-    // Deal cards with a temporary bet of 1 (will be updated after betting)
-    final roundState = _dealInitialHandsUseCase.execute(
-      players: players,
-      openerIndex: 0, // TODO: Rotate opener
-      betAmount: 1, // Temporary, will be updated
+    // Deal cards WITHOUT deducting chips yet (betAmount = 0)
+    // We'll deduct chips when the actual bet is placed
+    final deck = Card.shuffleDeck(Card.createDeck());
+    int cardIndex = 0;
+
+    final updatedPlayers = <Player>[];
+    for (final player in players) {
+      final cards = [
+        deck[cardIndex++],
+        deck[cardIndex++],
+        deck[cardIndex++],
+      ];
+      updatedPlayers.add(player.updateHand(Hand(cards)));
+    }
+
+    final discardPile = [deck[cardIndex++]];
+    final remainingDeck = deck.sublist(cardIndex);
+
+    final roundState = RoundState(
+      players: updatedPlayers,
+      deck: remainingDeck,
+      discardPile: discardPile,
+      pot: 0, // No pot yet
+      betAmount: 0, // No bet yet
+      totalTurns: 0,
+      turnsRemaining: 0,
+      currentPlayerIndex: 0,
+      openerIndex: 0,
+      isComplete: false,
+      isSuddenDeathMode: players.every((p) => p.chips <= 2),
     );
 
     _gameRepository.updateGame(
       currentGame!.copyWith(
         currentRound: roundState,
-        players: roundState.players,
       ),
     );
     notifyListeners();
@@ -80,7 +105,7 @@ class GameProvider extends ChangeNotifier {
 
     // Validate bet
     final validation = _validateBetUseCase.execute(
-      players: players,
+      players: currentRound!.players,
       betAmount: betAmount,
     );
 
@@ -88,17 +113,28 @@ class GameProvider extends ChangeNotifier {
       throw Exception(validation.errorMessage);
     }
 
+    // Deduct chips from all players
+    final playersAfterBet = currentRound!.players.map((p) {
+      return p.removeChips(betAmount);
+    }).toList();
+
     // Update the round with the actual bet amount and recalculate turns
     final turnsPerPlayer = _getTurnsPerPlayer(betAmount);
-    final totalActions = turnsPerPlayer * players.length;
+    final totalActions = turnsPerPlayer * playersAfterBet.length;
     final updatedRound = currentRound!.copyWith(
+      players: playersAfterBet,
       betAmount: betAmount,
       totalTurns: totalActions,
       turnsRemaining: totalActions,
-      pot: betAmount * players.length,
+      pot: betAmount * playersAfterBet.length,
     );
 
-    _gameRepository.updateRound(updatedRound);
+    _gameRepository.updateGame(
+      currentGame!.copyWith(
+        currentRound: updatedRound,
+        players: playersAfterBet,
+      ),
+    );
     notifyListeners();
   }
 
