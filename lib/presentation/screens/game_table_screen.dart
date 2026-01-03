@@ -70,10 +70,10 @@ class _GameTableScreenState extends State<GameTableScreen> {
   }
 
   Widget _buildBetweenRoundsView(BuildContext context, GameProvider gameProvider) {
-    // Auto-show betting dialog
+    // Auto-deal cards first
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_isProcessingTurn) {
-        _showBettingDialog(context, gameProvider);
+        _dealCardsAndShowBetting(context, gameProvider);
       }
     });
 
@@ -92,6 +92,20 @@ class _GameTableScreenState extends State<GameTableScreen> {
         ],
       ),
     );
+  }
+
+  void _dealCardsAndShowBetting(BuildContext context, GameProvider gameProvider) {
+    setState(() => _isProcessingTurn = true);
+
+    // Deal cards first
+    gameProvider.dealCards();
+
+    setState(() => _isProcessingTurn = false);
+
+    // Then show betting dialog
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _showBettingDialog(context, gameProvider);
+    });
   }
 
   void _showBettingDialog(BuildContext context, GameProvider gameProvider) {

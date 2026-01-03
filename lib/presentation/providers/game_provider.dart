@@ -54,9 +54,29 @@ class GameProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Start a new round
-  void startRound({required int betAmount}) {
+  /// Deal cards (before betting)
+  void dealCards() {
     if (currentGame == null) return;
+
+    // Deal cards with a temporary bet of 1 (will be updated after betting)
+    final roundState = _dealInitialHandsUseCase.execute(
+      players: players,
+      openerIndex: 0, // TODO: Rotate opener
+      betAmount: 1, // Temporary, will be updated
+    );
+
+    _gameRepository.updateGame(
+      currentGame!.copyWith(
+        currentRound: roundState,
+        players: roundState.players,
+      ),
+    );
+    notifyListeners();
+  }
+
+  /// Start a new round with betting
+  void startRound({required int betAmount}) {
+    if (currentGame == null || currentRound == null) return;
 
     // Validate bet
     final validation = _validateBetUseCase.execute(
@@ -68,20 +88,27 @@ class GameProvider extends ChangeNotifier {
       throw Exception(validation.errorMessage);
     }
 
-    // Deal initial hands
-    final roundState = _dealInitialHandsUseCase.execute(
-      players: players,
-      openerIndex: 0, // TODO: Rotate opener
+    // Update the round with the actual bet amount and recalculate turns
+    final turnsPerPlayer = _getTurnsPerPlayer(betAmount);
+    final totalActions = turnsPerPlayer * players.length;
+    final updatedRound = currentRound!.copyWith(
       betAmount: betAmount,
+      totalTurns: totalActions,
+      turnsRemaining: totalActions,
+      pot: betAmount * players.length,
     );
 
-    _gameRepository.updateGame(
-      currentGame!.copyWith(
-        currentRound: roundState,
-        players: roundState.players,
-      ),
-    );
+    _gameRepository.updateRound(updatedRound);
     notifyListeners();
+  }
+
+  int _getTurnsPerPlayer(int betAmount) {
+    if (betAmount <= 0) return 0;
+    if (betAmount == 1) return 5;
+    if (betAmount == 2) return 4;
+    if (betAmount == 3) return 3;
+    if (betAmount == 4) return 2;
+    return 1; // 5 or more
   }
 
   /// Play a turn
