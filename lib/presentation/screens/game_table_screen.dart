@@ -10,6 +10,7 @@ import '../widgets/bet_control_widget.dart';
 import '../widgets/playing_card_widget.dart';
 import '../widgets/player_panel_widget.dart';
 import '../widgets/chip_display_widget.dart';
+import '../widgets/game_info_bar_widget.dart';
 
 class GameTableScreen extends StatefulWidget {
   const GameTableScreen({super.key});
@@ -198,52 +199,13 @@ class _GameTableScreenState extends State<GameTableScreen> {
 
     return Padding(
       padding: const EdgeInsets.all(SuddenDeathSizes.spacingLg),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          ChipDisplayWidget(
-            amount: round.pot,
-            label: 'POT',
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: SuddenDeathSizes.spacingLg,
-              vertical: SuddenDeathSizes.spacingMd,
-            ),
-            decoration: SuddenDeathDecorations.glassPanel,
-            child: Column(
-              children: [
-                Text(
-                  'TURNS LEFT',
-                  style: SuddenDeathTextStyles.caption,
-                ),
-                Text(
-                  '${round.turnsRemaining}',
-                  style: SuddenDeathTextStyles.score.copyWith(fontSize: 24),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: SuddenDeathSizes.spacingLg,
-              vertical: SuddenDeathSizes.spacingMd,
-            ),
-            decoration: SuddenDeathDecorations.glassPanel,
-            child: Column(
-              children: [
-                Text(
-                  'ROUND',
-                  style: SuddenDeathTextStyles.caption,
-                ),
-                Text(
-                  '$currentRoundNum/$totalRounds',
-                  style: SuddenDeathTextStyles.score.copyWith(fontSize: 24),
-                ),
-              ],
-            ),
-          ),
-        ],
+      child: Center(
+        child: GameInfoBarWidget(
+          pot: round.pot,
+          turnsLeft: round.turnsRemaining,
+          currentRound: currentRoundNum,
+          totalRounds: totalRounds,
+        ),
       ),
     );
   }
