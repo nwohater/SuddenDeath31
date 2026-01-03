@@ -1,92 +1,73 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'data/datasources/sqlite_datasource.dart';
+import 'data/repositories/game_repository.dart';
+import 'data/repositories/settings_repository.dart';
+import 'data/repositories/stats_repository.dart';
+import 'domain/usecases/check_game_over_usecase.dart';
+import 'domain/usecases/deal_initial_hands_usecase.dart';
+import 'domain/usecases/play_turn_usecase.dart';
+import 'domain/usecases/resolve_round_usecase.dart';
+import 'domain/usecases/validate_bet_usecase.dart';
+import 'presentation/providers/game_provider.dart';
+import 'presentation/providers/settings_provider.dart';
+import 'presentation/providers/stats_provider.dart';
+import 'presentation/screens/main_menu_screen.dart';
+import 'presentation/screens/settings_screen.dart';
+import 'presentation/screens/stats_screen.dart';
+import 'presentation/theme/sudden_death_theme.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const SuddenDeath31App());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Sudden Death 31',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Sudden Death 31'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+class SuddenDeath31App extends StatelessWidget {
+  const SuddenDeath31App({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+    // Initialize dependencies
+    final sqliteDataSource = SQLiteDataSource();
+    final gameRepository = GameRepository();
+    final settingsRepository = SettingsRepository(sqliteDataSource);
+    final statsRepository = StatsRepository(sqliteDataSource);
+
+    // Initialize use cases
+    final dealInitialHandsUseCase = DealInitialHandsUseCase();
+    final playTurnUseCase = PlayTurnUseCase();
+    final resolveRoundUseCase = ResolveRoundUseCase();
+    final checkGameOverUseCase = CheckGameOverUseCase();
+    final validateBetUseCase = ValidateBetUseCase();
+
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => GameProvider(
+            gameRepository: gameRepository,
+            dealInitialHandsUseCase: dealInitialHandsUseCase,
+            playTurnUseCase: playTurnUseCase,
+            resolveRoundUseCase: resolveRoundUseCase,
+            checkGameOverUseCase: checkGameOverUseCase,
+            validateBetUseCase: validateBetUseCase,
+          ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+        ChangeNotifierProvider(
+          create: (_) => SettingsProvider(settingsRepository: settingsRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => StatsProvider(statsRepository: statsRepository),
+        ),
+      ],
+      child: MaterialApp(
+        title: 'Sudden Death 31',
+        theme: SuddenDeathTheme.darkTheme,
+        debugShowCheckedModeBanner: false,
+        home: const MainMenuScreen(),
+        routes: {
+          '/settings': (context) => const SettingsScreen(),
+          '/stats': (context) => const StatsScreen(),
+        },
       ),
     );
   }

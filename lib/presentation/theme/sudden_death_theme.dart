@@ -473,11 +473,11 @@ class SuddenDeathTheme {
       ),
     ),
 
-    cardTheme: CardTheme(
+    cardTheme: const CardThemeData(
       color: SuddenDeathColors.slate,
       elevation: 8,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.all(Radius.circular(16)),
       ),
     ),
 

@@ -32,6 +32,9 @@ class Hand extends Equatable {
     return suitTotals.values.reduce((a, b) => a > b ? a : b);
   }
 
+  /// Alias for score (for consistency with other code)
+  int get value => score;
+
   /// Get the suit that produces the best score
   Suit? get scoringSuit {
     if (cards.isEmpty) return null;

@@ -107,7 +107,7 @@ class MainMenuScreen extends StatelessWidget {
                   gradient: SuddenDeathGradients.buttonDefault,
                   compact: true,
                   onPressed: () {
-                    // TODO: Navigate to stats screen
+                    Navigator.pushNamed(context, '/stats');
                   },
                 ),
               ),
@@ -118,7 +118,7 @@ class MainMenuScreen extends StatelessWidget {
                   gradient: SuddenDeathGradients.buttonDefault,
                   compact: true,
                   onPressed: () {
-                    // TODO: Navigate to settings screen
+                    Navigator.pushNamed(context, '/settings');
                   },
                 ),
               ),
